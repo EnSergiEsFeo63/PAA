@@ -1,28 +1,18 @@
 import os
 
-from jinja2 import pass_eval_context
-
 """
 Tot el programa serà bàsicament tota una classe ( per ara, si no va be doncs potser caldràn funcions fora de la classe, ns), 
 ja veurem com farem la lectura de dades, pero per ara hem de programar l'algoritme en sí
 """
 class CKY:
-    def __init__(self):
-        self.normes = {'S': ['a','XA','AX','b'],
-                       'A': 'RB',
-                        'B': ['b','AX','a'],
-                        'X':'a',
-                        'R':'XB'}
+    def __init__(self,nom):
+        self.gramatica = self.llegir_dades(nom)
         #self.n = len(paraula)
         pass
     
     def crear_taula(self,n):
         taula = [[[] for i in range(n-j)]for j in range(n)]
         return(taula)
-    
-    def afegir_norma(self,index,norma):
-        self.normes[index] = norma
-        pass
     
     def resol(self, paraula):
         n = len(paraula)
@@ -37,10 +27,11 @@ class CKY:
                     #print(taula[i-k-1][j+k+1])
                     elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
                     #print(elements)
-                    for valor in self.normes:
+                    for valor in self.gramatica:
                         for element in elements:
-                            if element in self.normes[valor]:
+                            if element in self.gramatica[valor]:
                                 taula[i][j].append(valor)
+        #print(taula)
         return taula
     def combinacions(self, arg1, arg2):
         resultat = []
@@ -53,8 +44,8 @@ class CKY:
     
     def nivell1(self,taula,paraula):
         for i in range(0,len(paraula)):
-            for norma in self.normes:
-                if paraula[i] in self.normes[norma]:
+            for norma in self.gramatica:
+                if paraula[i] in self.gramatica[norma]:
                     taula[0][i].append(norma)
         return taula
     def llegir_dades(self, nom):
@@ -83,10 +74,10 @@ class CKY:
         return gramatica
 
 
-"""
-e = CKY()
-e.llegir_dades('gram1')   
-"""   
+
+e = CKY('gram1')
+e.resol('aaa')  
+ 
 
         
 
