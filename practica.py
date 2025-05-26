@@ -21,8 +21,8 @@ class CKY:
         taula = self.nivell1(taula,paraula)
         #print(taula)
         for i in range(0,n):
-            for j in range(n-i):
-                for k in range(i):
+            for j in range(0,n-i):
+                for k in range(0,i):
                     #print(taula[k][j])
                     #print(taula[i-k-1][j+k+1])
                     elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
@@ -32,6 +32,7 @@ class CKY:
                             if element in self.gramatica[valor]:
                                 taula[i][j].append(valor)
         #print(taula)
+        
         return taula
     def combinacions(self, arg1, arg2):
         resultat = []
