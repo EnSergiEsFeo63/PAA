@@ -63,14 +63,17 @@ class CKY:
                 gramatica[norma] = []
                 frase = linees[i]
                 paraula = ''
-                for j in range(3,len(frase)):
+                n = 0
+                while frase[n] != '>':
+                    n+=1
+                for j in range(n+1,len(frase)):
                     lletra = frase[j]
                     if lletra == '|' or j == len(frase)-1:
                         gramatica[norma].append(paraula)
                         paraula = ''
                     elif lletra != '':
                         paraula += lletra 
-        #print(gramatica)
+        print(gramatica)
         return gramatica
 
 

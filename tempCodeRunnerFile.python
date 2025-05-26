@@ -1,0 +1,9 @@
+def e(n):
+    i = n
+    while i < 5:
+        i+=1
+    print(i)
+    i+=1
+    print(i)
+    print('fi')
+e(1)
