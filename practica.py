@@ -8,6 +8,8 @@ class CKY:
     def __init__(self,nom):
         self.gramatica = self.llegir_dades(nom)
         #self.n = len(paraula)
+
+        ### AQUI NO TENDRIA QUE RECIBIR TAMBIEN LA PALABRA?S
         pass
     
     def crear_taula(self,n):
