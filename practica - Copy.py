@@ -34,16 +34,24 @@ class CKY:
                         for element in elements:
                             if element in self.gramatica[valor]:
                                 taula[i][j].append(valor)
-        #print(taula)
+        print(taula)
         
         return taula
-    def combinacions(self, arg1, arg2):
+    def combinacions(self, arg1, arg2, metode = 'det'):
+
         resultat = []
-        if len(arg1) !=0 and len(arg2) != 0:
-            for el1 in arg1:    
-                for el2 in arg2:
-                    element = el1 + el2
-                    resultat.append(element)
+        if metode == 'det':
+            if len(arg1) !=0 and len(arg2) != 0:
+                for el1 in arg1:    
+                    for el2 in arg2:
+                        element = el1 + el2
+                        resultat.append(element)
+        else:
+            if len(arg1) !=0 and len(arg2) != 0:
+                for el1 in arg1[:-1]:    
+                    for el2 in arg2[:-1]:
+                        element = el1 + el2
+                        resultat.append(element)
         return resultat
     
     def nivell1(self,taula,paraula):
@@ -51,6 +59,7 @@ class CKY:
             for norma in self.gramatica:
                 if paraula[i] in self.gramatica[norma]:
                     taula[0][i].append(norma)
+            taula[0][i].append(1)
         return taula
     def llegir_dades(self, nom):
         gramatica = {}
@@ -73,17 +82,47 @@ class CKY:
                 for j in range(n+1,len(frase)):
                     lletra = frase[j]
                     if lletra == '|' or j == len(frase)-1:
+                        if i == len(linees)-1 and j == len(frase)-1:
+                            paraula += lletra
                         gramatica[norma].append(paraula)
                         paraula = ''
                     elif lletra != '':
-                        paraula += lletra 
+                        paraula += lletra    
         print(gramatica)
         return gramatica
+    def resol_prob(self, paraula):
+        for valor in self.gramatica:
+            self.gramatica[valor][-1] = float(self.gramatica[valor][-1])
+        n = len(paraula)
+        taula = self.crear_taula(n)
+        #print(taula)
+        taula = self.nivell1(taula,paraula)
+        print(taula)
+        #print(taula)
+        for i in range(0,n):
+            for j in range(0,n-i):
+                for k in range(0,i):
+                    #print(taula[k][j])
+                    #print(taula[i-k-1][j+k+1])
+                    index = taula[k][j]
+                    elements = self.combinacions(index, taula[i-k-1][j+k+1], metode = 'prob')
+                    prob = float(index[-1] * taula[i-k-1][j+k+1][-1])
+                    #print(elements)
+                    for valor in self.gramatica:
+                        for element in elements:
+                            if element in self.gramatica[valor]:
+                                prob = float('%.3f'%(prob * self.gramatica[valor][-1]))
+                                if len(taula[i][j]) != 0:
+                                    if taula[i][j][-1] < prob:
+                                        taula[i][j] = [valor,prob]
+                                else:
+                                    taula[i][j] = [valor,prob]
+                                print(taula)
 
 
 
-e = CKY('gram1')
-e.resol('aaa')  
+e = CKY('gram2')
+e.resol_prob('aaa')  
  
 
         
