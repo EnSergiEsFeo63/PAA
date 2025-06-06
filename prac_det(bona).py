@@ -7,10 +7,12 @@ ja veurem com farem la lectura de dades, pero per ara hem de programar l'algorit
 class CKY:
     def __init__(self,nom):
         self.gramatica = self.llegir_dades(nom)
-        #self.n = len(paraula)
+        self.metode = 'det'
+        if 'prob' in nom:
+            self.metode = 'prob'
 
         ### AQUI NO TENDRIA QUE RECIBIR TAMBIEN LA PALABRA?
-        # Nah, rebrà la paraula amb resol, així pot resoldre més dd'una paraula amb la mateixa gramàtica
+        # Nah, rebrà la paraula amb resol, així pot resoldre més d'una paraula amb la mateixa gramàtica
         pass
     
     def crear_taula(self,n):
@@ -23,24 +25,13 @@ class CKY:
         #print(taula)
         taula = self.nivell1(taula,paraula)
         #print(taula)
-        for i in range(0,n):
-            for j in range(0,n-i):
-                for k in range(0,i):
-                    #print(taula[k][j])
-                    #print(taula[i-k-1][j+k+1])
-                    elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
-                    #print(elements)
-                    for valor in self.gramatica:
-                        for element in elements:
-                            if element in self.gramatica[valor]:
-                                taula[i][j].append(valor)
-        print(taula)
+        if self.metode == 'prob':
+            return self.resol_prob(n,taula)
+        return self.resol_det(n,taula)
         
-        return taula
-    def combinacions(self, arg1, arg2, metode = 'det'):
-
+    def combinacions(self, arg1, arg2):
         resultat = []
-        if metode == 'det':
+        if self.metode == 'det':
             if len(arg1) !=0 and len(arg2) != 0:
                 for el1 in arg1:    
                     for el2 in arg2:
@@ -59,7 +50,8 @@ class CKY:
             for norma in self.gramatica:
                 if paraula[i] in self.gramatica[norma]:
                     taula[0][i].append(norma)
-            taula[0][i].append(1)
+            if self.metode == 'prob':
+                taula[0][i].append(1)
         return taula
     def llegir_dades(self, nom):
         gramatica = {}
@@ -88,24 +80,34 @@ class CKY:
                         paraula = ''
                     elif lletra != '':
                         paraula += lletra    
-        print(gramatica)
+        #print(gramatica)
         return gramatica
-    def resol_prob(self, paraula):
+    def resol_det(self,n,taula):
+        for i in range(0,n):
+            for j in range(0,n-i):
+                for k in range(0,i):
+                    #print(taula[k][j])
+                    #print(taula[i-k-1][j+k+1])
+                    elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
+                    #print(elements)
+                    for valor in self.gramatica:
+                        for element in elements:
+                            if element in self.gramatica[valor]:
+                                taula[i][j].append(valor)
+        if 'S' in taula[n-1][0]:
+            return True
+        return False
+        
+    def resol_prob(self,n,taula):
         for valor in self.gramatica:
             self.gramatica[valor][-1] = float(self.gramatica[valor][-1])
-        n = len(paraula)
-        taula = self.crear_taula(n)
-        #print(taula)
-        taula = self.nivell1(taula,paraula)
-        print(taula)
-        #print(taula)
         for i in range(0,n):
             for j in range(0,n-i):
                 for k in range(0,i):
                     #print(taula[k][j])
                     #print(taula[i-k-1][j+k+1])
                     index = taula[k][j]
-                    elements = self.combinacions(index, taula[i-k-1][j+k+1], metode = 'prob')
+                    elements = self.combinacions(index, taula[i-k-1][j+k+1])
                     prob = float(index[-1] * taula[i-k-1][j+k+1][-1])
                     #print(elements)
                     for valor in self.gramatica:
@@ -117,12 +119,19 @@ class CKY:
                                         taula[i][j] = [valor,prob]
                                 else:
                                     taula[i][j] = [valor,prob]
-                                print(taula)
+                                #print(taula)
+        #print(taula)
+        if 'S' in taula[n-1][0]:
+            print(f"Probabilitat: {taula[n-1][0][1]}")
+            return True
+        return False
+
+            
 
 
 
-e = CKY('gram2')
-e.resol_prob('aaa')  
+e = CKY('gram_det')
+print(e.resol('aaa')) 
  
 
         
