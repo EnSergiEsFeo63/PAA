@@ -197,44 +197,58 @@ class GramTrans_CFGtoCNF:
         new_P = {}
 
         for A, rhss in self.P.items():
+            print(f'Procesar {A}--> {rhss}')
             new_rhss = []
-            print(f'Procesar {A}--> {rhs}')
 
             for rhs in rhss:
-                #1) si prod es més llarga que 1--> substituir
-                print (f'analizar RHS original: {rhs}')
+                print(f'  Analizar RHS: {rhs}')
+                #1) Substituir termianls si RHS té més de 1 simbol
+
                 if len(rhs) > 1 :
                     rhs2=[]
+
                     for X in rhs:
                         if self._es_terminal(X):
-                            T=term.get(X, None) #reulitza
+                            T=term.get(X) 
                             if not T:           # o crea nou terminal
                                 T= self._new_no_term(f'T_{X}')
                                 term[X] = T
                                 #afeguir la regla T-> X
                                 new_P.setdefault(T, []).append([X])
+                                print(f'Creat {T}--> {X}')
+
                             rhs2.append(T)
+                            print(f"    → Substitució terminal: {X} → {T}")
+                            
                         else:
                             rhs2.append(X)
-                    rhs = rhs2
+                    
+                    print(f'Despres substitució: {rhs2}')
+                
                 else: #es sols un terminal 
                     rhs2= rhs.copy() 
                     print(f"    → RHS de longitud 1, sin sustituciones: {rhs2}")
 
-            #2) Si té més de 2 símbols, fragmentar en regles binaries
-            if len(rhs) <=2:
-                new_rhss.append(rhs)
-            else:
-                # Fragmentar en regles binàries
-                prev= rhs[0]  
-                for i in range(1, len(rhs) - 1):
-                    next_no_term = self._new_no_term('C')
-                    new_rhss.append([prev, next_no_term])  # A -> B1 C1
-                    prev = next_no_term  # Actualitzar prev per la següent iteració
-                new_rhss.append([prev, rhs[-1]])   
-
+                #2) Si té més de 2 símbols, FRAGMENTACIÓ en regles binaries
+                if len(rhs2) <=2:
+                    new_rhss.append(rhs2)
+                else:
+                    # Fragmentar en regles binàries
+                    prev= rhs2[0]  
+                    for i in range(1, len(rhs2) - 1):
+                        next_no_term = self._new_no_term('Z')
+                        new_rhss.append([prev, next_no_term])  # A -> B1 C1
+                        
+                        print(f"    → Fragmentació: {prev} → {next_no_term}")
+                        
+                        prev = next_no_term  # Actualitzar prev per la següent iteració
+                    
+                    new_rhss.append([prev, rhs2[-1]])   
+                    print(f'fragmentacio {prev} → {rhs2[-1]}')
+                
             new_P[A] = new_rhss  # Afegir regles noves a la gramàtica
-
+        
+        ####Acabar bucle principal####    
         self.P = new_P  # Actualitzar la gramàtica amb les noves regles
 
     def to_cnf(self):
@@ -301,5 +315,15 @@ t._remove_epsilon_productions()
 print('Después', t.P)
 t._remove_unit_productions()
 print('Después de eliminar unit productions', t.P)
-t._remove_long_right_hand_sides()
+
+print()
+print()
+t._remove_long_right_hand_sides() #correcte 
 print('Después de eliminar long right hand sides', t.P)
+
+
+#####################
+#PASOS FALTANTS:
+#1, UNIR AMB CODI SAM
+#2, CREAR JOCS PROVES MILLORS
+#####################
