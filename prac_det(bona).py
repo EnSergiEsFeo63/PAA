@@ -130,7 +130,7 @@ class CKY:
 
 
 
-e = CKY('gram_det')
+e = CKY('gram_prob')
 print(e.resol('aaa')) 
  
 
