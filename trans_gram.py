@@ -136,14 +136,106 @@ class GramTrans_CFGtoCNF:
         self.P = new_P
 
 
+    def _remove_unit_productions(self): #despres d'aplicar --> no queden regles on RHS sigui un sol no terminal
+        """
+        Elimina unit productions (produccions unitàries) de la gramàtica.
+        A--> B (on A i B són no terminals).
+        """
+        # 1) Conj parells unitaris directes
+        unit_pairs= {
+            #recorrer cada no terminal A i les seves produccions 
+            (A, rhs[0]) 
+            for A, rhss in self.P.items() 
+            for rhs in rhss 
+            if len(rhs) == 1 and rhs[0] in self.no_term #si la llista RHS es un sol terme (inclos en no_terminals)
+            }                                           #Incloure en unit_pairs        }
 
-    def _remove_unit_productions(self):
-        pass
+        # 2) Busquem cadenes unitaries transitives i tanquem
+        #si A → B i B → C, llavors A → C també és una unit production
+        unit_pairs= set() 
 
+        for A in self.no_term: 
+            visited = set()
+            stack = [A]
+            while stack:
+                X = stack.pop()
+                for rhs in self.P.get(X, []):
+                    if len(rhs) == 1 and rhs[0] in self.no_term:
+                        B = rhs[0]
+                        if B not in visited:
+                            visited.add(B)
+                            unit_pairs.add((A, B))
+                            stack.append(B)
+
+        print('Unit pairs:', unit_pairs)
+        # 3) Nova taula de produccions (treure unit productions)
+        new_P = { #Copiar no unitaries
+            A: [rhs for rhs in rhss #filtrar unicament no siguin unitaris
+                if not (len(rhs) == 1 and rhs[0] in self.no_term) #eliminar unit productions
+                ]
+            for A, rhss in self.P.items()
+        }
+        # 4) Afegir produccions transitives
+        print('New_p ANTES TRANSFER:',new_P['S01'])
+        for (A,B) in unit_pairs:
+            for rhs in self.P.get(B, []):
+                if not (len(rhs) == 1 and rhs[0] in self.no_term):
+                    if rhs not in new_P[A]:
+                        new_P[A].append(rhs)
+        print('New_p DESPUES TRANSFER:',new_P['S01'])
+        # 5) Actualitzar P 
+        self.P = new_P                
+
+
+    #FALTAAAAAA --> TE PROBLEMESSS ;((
     def _remove_long_right_hand_sides(self):
-        pass
+        """
+        Fragmentar les regles llargues A-> B1 B2 ... Bn
+        on n > 2, en regles més curtes A -> B1 C1, C1 -> B2 C2, ..., Cn-1 -> Bn.
+        """
+        term={}
+        new_P = {}
 
+        for A, rhss in self.P.items():
+            new_rhss = []
+            print(f'Procesar {A}--> {rhs}')
 
+            for rhs in rhss:
+                #1) si prod es més llarga que 1--> substituir
+                print (f'analizar RHS original: {rhs}')
+                if len(rhs) > 1 :
+                    rhs2=[]
+                    for X in rhs:
+                        if self._es_terminal(X):
+                            T=term.get(X, None) #reulitza
+                            if not T:           # o crea nou terminal
+                                T= self._new_no_term(f'T_{X}')
+                                term[X] = T
+                                #afeguir la regla T-> X
+                                new_P.setdefault(T, []).append([X])
+                            rhs2.append(T)
+                        else:
+                            rhs2.append(X)
+                    rhs = rhs2
+                else: #es sols un terminal 
+                    rhs2= rhs.copy() 
+                    print(f"    → RHS de longitud 1, sin sustituciones: {rhs2}")
+
+            #2) Si té més de 2 símbols, fragmentar en regles binaries
+            if len(rhs) <=2:
+                new_rhss.append(rhs)
+            else:
+                # Fragmentar en regles binàries
+                prev= rhs[0]  
+                for i in range(1, len(rhs) - 1):
+                    next_no_term = self._new_no_term('C')
+                    new_rhss.append([prev, next_no_term])  # A -> B1 C1
+                    prev = next_no_term  # Actualitzar prev per la següent iteració
+                new_rhss.append([prev, rhs[-1]])   
+
+            new_P[A] = new_rhss  # Afegir regles noves a la gramàtica
+
+        self.P = new_P  # Actualitzar la gramàtica amb les noves regles
 
     def to_cnf(self):
         """
@@ -176,3 +268,38 @@ t._add_start_symbol()
 print('Antes', t.P)
 t._remove_epsilon_productions()
 print('Después', t.P)
+
+print()
+print('-----------------------------------')
+print()
+
+
+F= {
+  'S': [['A'], ['b']],
+  'A': [['B']],
+  'B': [['c']]
+}
+t = GramTrans_CFGtoCNF(F)
+t._add_start_symbol()
+print('Antes', t.P)
+t._remove_epsilon_productions()
+print('Después', t.P)
+t._remove_unit_productions()
+print('Después de eliminar unit productions', t.P)
+
+
+H = {
+      'S': [['A', 'b', 'C', 'D']], 
+      'A': [['a']], 'C': [['c']], 
+      'D': [['d']]
+      }
+
+t = GramTrans_CFGtoCNF(H)
+t._add_start_symbol()
+print('Antes', t.P)
+t._remove_epsilon_productions()
+print('Después', t.P)
+t._remove_unit_productions()
+print('Después de eliminar unit productions', t.P)
+t._remove_long_right_hand_sides()
+print('Después de eliminar long right hand sides', t.P)
