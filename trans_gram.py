@@ -1,5 +1,7 @@
 #Extensió 1: Transformar GRAMATICA
 #CFG (gram ind del context) --> CNF (forma normal de Chomsky)
+ 
+import copy
 
 """
 Teoria:
@@ -39,3 +41,138 @@ VALE EN CADA VIDEO VEIG UNES REGLES DIFERENTS :(((((((((((
 
 
 """
+
+
+class GramTrans_CFGtoCNF:
+    def __init__(self, gram_original):
+        """
+        gram_original: gram CFG a transformar (list)
+        """
+        self.gram_org = gram_original #gram original (argument de la instancia)
+        #primer simbol:
+        self.start= next(iter(gram_original.keys())) #primer simbol no terminal (start symbol)
+        #no terminals:
+        self.no_term= set(gram_original.keys())
+        #termiansl:
+        self.term= {t for rhss in gram_original.values() for rhs in rhss for t in rhs if self._es_terminal(t)}
+        
+        self.P = copy.deepcopy(gram_original) # copia profunda original --> no modifica estructura original gram_org 
+        #Nous simbols 
+        self.contador = 0 #comptador per generar nous
+        self.S0= self._new_no_term('S0') 
+
+
+
+
+    def _es_terminal(self, simbol):
+        """
+        True si simbol no és no_terminal ni cadena buida (ε).
+        """
+        return not (simbol in self.no_term or simbol == 'ε')
+
+    def _new_no_term(self, prefix:str):
+        """
+        Genera nou simbol no terminal únic basat en un prefix donat.
+        """
+        while True:
+            self.contador += 1
+            nou_no_term = f"{prefix}{self.contador}"
+            if nou_no_term not in self.no_term: #incloure en no_term (si no existeix previament)
+                self.no_term.add(nou_no_term)
+                return nou_no_term
+
+    ###########
+    #metodes privats 
+    ###########
+    def _add_start_symbol(self):
+        #afegrir un nou start symbol S0
+        self.P[self.S0] = [[self.start]]  # afegir gram original com a producció de S0
+        
+
+    def _remove_epsilon_productions(self):
+        """
+        elimina produccions buides (ε-productions) en termes P.
+        """
+        # 1) Trobar epsilon-produccions --> sempre representades com 'ε' en les regles de producció, no com list buide []
+        epsilon_productions = {nt for nt, rhss in self.P.items() if any(rhs == ['ε'] for rhs in rhss)}
+        change = True
+        while change:
+            change = False
+            for A, rhss in self.P.items():
+                for rhs in rhss:
+                    if all(X in epsilon_productions for X in rhs) and A not in epsilon_productions:
+                        epsilon_productions.add(A)
+                        change = True
+        # Ara epsilon_productions conté les variables que poden derivar a ε
+        
+        # 2) Reescriure produccions (eliminar ε-produccions)
+        from itertools import chain, combinations
+        new_P = {}
+
+        for A, rhss in self.P.items():
+            new_rhss = []
+            for rhs in rhss:
+                #index simbol epsilon-productions en rhs
+                null_pos= [i for i, X in enumerate(rhs) if X in epsilon_productions]
+                #Si no hiha simbols nullables --> conservar regla original
+                if not null_pos:
+                    if rhs not in new_rhss:
+                        new_rhss.append(list(rhs))
+                        continue
+                #Si hi ha nullables, generar noves produccions (sense els nullables)
+                for remove in chain.from_iterable(combinations(null_pos, r) for r in range(len(null_pos) + 1)):
+                    if set(remove)== set(null_pos) and A!=self.S0:
+                        continue
+                    new_rhs = [X for i, X in enumerate(rhs) if i not in remove]
+                    if not new_rhs: #si queda buida representem com ε
+                        new_rhs = ['ε']
+                    if new_rhs not in new_rhss:
+                        new_rhss.append(new_rhs) #evitar duplicats
+                    
+            # Save totes produccions no buides (ε-productions)
+            # menys si A es S0 --> el nou inici pot derivar a ε
+            new_P[A]=[rhs for rhs in new_rhss if rhs != ['ε'] or A == self.S0]
+
+        self.P = new_P
+
+
+
+    def _remove_unit_productions(self):
+        pass
+
+    def _remove_long_right_hand_sides(self):
+        pass
+
+
+
+    def to_cnf(self):
+        """
+        Transforma gramàtica CFG a CNF.
+        Retorna gramàtica en CNF.
+        """
+        self._add_start_symbol()
+        self._remove_epsilon_productions()
+        self._remove_unit_productions()
+        self._remove_long_right_hand_sides()
+        return self.P
+
+
+
+
+
+
+
+####################################################################################
+#PROVAR
+# Gramática de ejemplo
+G = {
+    'S': [['A','B'], ['b']],
+    'A': [['a'], ['ε']],   # A → ε
+    'B': [['b'], ['ε']],   # B → ε
+}
+
+t= GramTrans_CFGtoCNF(G)
+t._add_start_symbol()
+print('Antes', t.P)
+t._remove_epsilon_productions()
+print('Después', t.P)
