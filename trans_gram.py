@@ -3,46 +3,6 @@
  
 import copy
 
-"""
-Teoria:
-CFG: conjuny regles definieix com generar cadenes d'strings
-clausules: G=(V, E, R, S)
-V: conj finit varibles (no terminals) [S,A,B..]
-E: alfabets de simbols (terminals) [a,b,c,..]
-R: conj regles de producció [A-->aB]
-S: start symbol (variable inicial, des de on comença derivació)
-
-CNF: forma normal de Chomsky (versió estandard de CFG, regles més restrictives)
-100% tenir una d'aquestes formes:
-1. A --> BC (BC 2 vars no terminals)
-2. A --> a (un terminal)
-3. S --> ε (start symbol pot derivar a cadena buida, opcional)
-[opció 3: unicament si cadena buida és part del llenguatge generat]
-
-*ε= produccions buides (cadena buida)
-
-Pasos a seguir per transformar una gramàtica CFG a CNF:
-Totes clàusules han de complir una de les formes CNF.
-
-EXPLICACIÓ WHATAPP SILVIA LINK
-
-
-VALE EN CADA VIDEO VEIG UNES REGLES DIFERENTS :(((((((((((
-
-0. New productions:
-
-1. Add ε-productions (si cadena buida és part del llenguatge)
-
-
-
-
-1. Eliminar start symbol per un right-hand side ()
-
-
-
-"""
-
-
 class GramTrans_CFGtoCNF:
     def __init__(self, gram_original):
         """
@@ -61,7 +21,23 @@ class GramTrans_CFGtoCNF:
         self.contador = 0 #comptador per generar nous
         self.S0= self._new_no_term('S0') 
 
-
+    #mirar si ja esta en formar CNF
+    def es_cnf(self):
+        #return True si ja es CNF
+        for A,rhss in self.gram_org.items():
+            for rhs in rhss:
+                symbol= rhs if isinstance(rhs, list) else list(rhs) #convertir a llista si no ho és
+                #convertir a llista els simbols terminals
+                if len(symbol)==1:
+                    if symbol[0] not in self.term:
+                        return False
+                elif len(symbol) == 2:
+                    if any(X not in self.no_term for X in symbol):
+                        return False
+                else:
+                    return False #longitud superior
+        return True
+    
 
 
     def _es_terminal(self, simbol):
@@ -167,7 +143,7 @@ class GramTrans_CFGtoCNF:
                             unit_pairs.add((A, B))
                             stack.append(B)
 
-        print('Unit pairs:', unit_pairs)
+        #print('Unit pairs:', unit_pairs)
         # 3) Nova taula de produccions (treure unit productions)
         new_P = { #Copiar no unitaries
             A: [rhs for rhs in rhss #filtrar unicament no siguin unitaris
@@ -176,18 +152,17 @@ class GramTrans_CFGtoCNF:
             for A, rhss in self.P.items()
         }
         # 4) Afegir produccions transitives
-        print('New_p ANTES TRANSFER:',new_P['S01'])
+        #print('New_p ANTES TRANSFER:',new_P['S01'])
         for (A,B) in unit_pairs:
             for rhs in self.P.get(B, []):
                 if not (len(rhs) == 1 and rhs[0] in self.no_term):
                     if rhs not in new_P[A]:
                         new_P[A].append(rhs)
-        print('New_p DESPUES TRANSFER:',new_P['S01'])
+        #print('New_p DESPUES TRANSFER:',new_P['S01'])
         # 5) Actualitzar P 
         self.P = new_P                
 
 
-    #FALTAAAAAA --> TE PROBLEMESSS ;((
     def _remove_long_right_hand_sides(self):
         """
         Fragmentar les regles llargues A-> B1 B2 ... Bn
@@ -197,11 +172,11 @@ class GramTrans_CFGtoCNF:
         new_P = {}
 
         for A, rhss in self.P.items():
-            print(f'Procesar {A}--> {rhss}')
+            #print(f'Procesar {A}--> {rhss}')
             new_rhss = []
 
             for rhs in rhss:
-                print(f'  Analizar RHS: {rhs}')
+                #print(f'  Analizar RHS: {rhs}')
                 #1) Substituir termianls si RHS té més de 1 simbol
 
                 if len(rhs) > 1 :
@@ -215,19 +190,19 @@ class GramTrans_CFGtoCNF:
                                 term[X] = T
                                 #afeguir la regla T-> X
                                 new_P.setdefault(T, []).append([X])
-                                print(f'Creat {T}--> {X}')
+                                #print(f'Creat {T}--> {X}')
 
                             rhs2.append(T)
-                            print(f"    → Substitució terminal: {X} → {T}")
+                            #print(f"    → Substitució terminal: {X} → {T}")
                             
                         else:
                             rhs2.append(X)
                     
-                    print(f'Despres substitució: {rhs2}')
+                    #print(f'Despres substitució: {rhs2}')
                 
                 else: #es sols un terminal 
                     rhs2= rhs.copy() 
-                    print(f"    → RHS de longitud 1, sin sustituciones: {rhs2}")
+                    #print(f"    → RHS de longitud 1, sin sustituciones: {rhs2}")
 
                 #2) Si té més de 2 símbols, FRAGMENTACIÓ en regles binaries
                 if len(rhs2) <=2:
@@ -239,91 +214,39 @@ class GramTrans_CFGtoCNF:
                         next_no_term = self._new_no_term('Z')
                         new_rhss.append([prev, next_no_term])  # A -> B1 C1
                         
-                        print(f"    → Fragmentació: {prev} → {next_no_term}")
+                        #print(f"    → Fragmentació: {prev} → {next_no_term}")
                         
                         prev = next_no_term  # Actualitzar prev per la següent iteració
                     
                     new_rhss.append([prev, rhs2[-1]])   
-                    print(f'fragmentacio {prev} → {rhs2[-1]}')
+                    #print(f'fragmentacio {prev} → {rhs2[-1]}')
                 
             new_P[A] = new_rhss  # Afegir regles noves a la gramàtica
         
         ####Acabar bucle principal####    
         self.P = new_P  # Actualitzar la gramàtica amb les noves regles
 
+
+
+    ####################
+    # METODE PER TRANSFORMACIÓ
+    ####################
     def to_cnf(self):
-        """
-        Transforma gramàtica CFG a CNF.
-        Retorna gramàtica en CNF.
-        """
-        self._add_start_symbol()
-        self._remove_epsilon_productions()
-        self._remove_unit_productions()
-        self._remove_long_right_hand_sides()
-        return self.P
+        if self.es_cnf():
+            print("La gramàtica ja està en CNF.")
+            return self.P
+        else:
+            print("Transformant gramàtica CFG a CNF...")
+            #Transforma gramàtica CFG a CNF.
+            #Retorna gramàtica en CNF.
+            self._add_start_symbol()
+            self._remove_epsilon_productions()
+            self._remove_unit_productions()
+            self._remove_long_right_hand_sides()
+            return self.P
 
 
 
 
 
 
-
-####################################################################################
-#PROVAR
-# Gramática de ejemplo
-G = {
-    'S': [['A','B'], ['b']],
-    'A': [['a'], ['ε']],   # A → ε
-    'B': [['b'], ['ε']],   # B → ε
-}
-
-t= GramTrans_CFGtoCNF(G)
-t._add_start_symbol()
-print('Antes', t.P)
-t._remove_epsilon_productions()
-print('Después', t.P)
-
-print()
-print('-----------------------------------')
-print()
-
-
-F= {
-  'S': [['A'], ['b']],
-  'A': [['B']],
-  'B': [['c']]
-}
-t = GramTrans_CFGtoCNF(F)
-t._add_start_symbol()
-print('Antes', t.P)
-t._remove_epsilon_productions()
-print('Después', t.P)
-t._remove_unit_productions()
-print('Después de eliminar unit productions', t.P)
-
-
-H = {
-      'S': [['A', 'b', 'C', 'D']], 
-      'A': [['a']], 'C': [['c']], 
-      'D': [['d']]
-      }
-
-t = GramTrans_CFGtoCNF(H)
-t._add_start_symbol()
-print('Antes', t.P)
-t._remove_epsilon_productions()
-print('Después', t.P)
-t._remove_unit_productions()
-print('Después de eliminar unit productions', t.P)
-
-print()
-print()
-t._remove_long_right_hand_sides() #correcte 
-print('Después de eliminar long right hand sides', t.P)
-
-
-#####################
-#PASOS FALTANTS:
-#1, UNIR AMB CODI SAM
-#2, CREAR JOCS PROVES MILLORS
-#####################
