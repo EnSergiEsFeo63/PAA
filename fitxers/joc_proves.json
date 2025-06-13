@@ -1,0 +1,56 @@
+{
+  "gram_1": {
+    "a": true,
+    "b": true,
+    "aaaa": true,
+    "aaab": true,
+    "aabb": true,
+    "ab": false,
+    "ba": false,
+    "aa": false,
+    "bb": false
+  },
+  "gram_2": {
+    "ab": true,
+    "bb": true,
+    "aabb": true,
+    "abab": true,
+    "bbab": true,
+    "a": false,
+    "ba": false,
+    "aa": false,
+    "aba": false,
+    "bab": false
+  },
+  "gram_CNF": {
+    "ab": true,
+    "a": false,
+    "b": false,
+    "aa": false,
+    "bb": false
+  },
+  "gram_det": {
+    "a": true,
+    "b": true,
+    "aaaa": true,
+    "aaab": true,
+    "aaba": true,
+    "ab": false,
+    "ba": false,
+    "aa": false,
+    "abb": false,
+    "bbb": false
+  },
+  "gram_prob": {
+    "a": true,
+    "b": true,
+    "aaaa": true,
+    "aaab": true,
+    "aabb": true,
+    "ab": false,
+    "ba": false,
+    "aa": false,
+    "bb": false,
+    "aba": false
+  }
+}

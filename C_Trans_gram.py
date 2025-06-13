@@ -239,10 +239,23 @@ class GramTrans_CFGtoCNF:
             print("Transformant gramàtica CFG a CNF...")
             #Transforma gramàtica CFG a CNF.
             #Retorna gramàtica en CNF.
-            self._add_start_symbol()
+
+            appears_in_rhs = any(self.start in rhs
+                    for rhss in self.P.values() for rhs in rhss)
+                
+            has_epsilon = any( rhs == ['ε']
+                        for rhss in self.P.values() for rhs in rhss)
+    
+            if appears_in_rhs or has_epsilon:
+                self._add_start_symbol()
+
             self._remove_epsilon_productions()
             self._remove_unit_productions()
             self._remove_long_right_hand_sides()
+
+            if not self.es_cnf():
+                print("La gramàtica no s'ha pogut transformar a CNF.")
+
             return self.P
 
 
