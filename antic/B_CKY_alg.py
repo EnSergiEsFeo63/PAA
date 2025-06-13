@@ -35,23 +35,13 @@ class CKY:
         return self.resol_det(n,taula)
         
     def combinacions(self, arg1, arg2):
-        #Fem les combinacions de tots els valors de les dues cel·les
-        #L'algoritme probabilistic necessita ademès que es fagin el producte de la probabilitat dels dos valors
+        #fem les combinacions de tots els valors de les dues cel·les
         resultat = []
-        if self.metode == 'prob':
-            for idx1, nt1 in enumerate(arg1[0]):
-                for idx2, nt2 in enumerate(arg2[0]):
-                    element = nt1 + nt2
-                    prob1 = arg1[1][idx1]
-                    prob2 = arg2[1][idx2]
-                    prob = prob1 * prob2
-                    resultat.append((element, prob))
-        else:
-            if len(arg1) !=0 and len(arg2) != 0:
-                for el1 in arg1:    
-                    for el2 in arg2:
-                        element = el1 + el2
-                        resultat.append(element)
+        if len(arg1) !=0 and len(arg2) != 0:
+            for el1 in arg1:    
+                for el2 in arg2:
+                    element = el1 + el2
+                    resultat.append(element)
         return resultat
     
     def nivell1(self,taula,paraula):
@@ -91,15 +81,23 @@ class CKY:
         #print(self.gramatica)
         for i in range(0,n):
             for j in range(0,n-i):
-                for k in range(0,i):                  
-                    elements = self.combinacions(taula[k][j],taula[i-k-1][j+k+1] )
+                for k in range(0,i):
+                                        
+                    elements = []
+                    for idx1, nt1 in enumerate(taula[k][j][0]):
+                        for idx2, nt2 in enumerate(taula[i-k-1][j+k+1][0]):
+                            element = nt1 + nt2
+                            prob1 = taula[k][j][1][idx1]
+                            prob2 = taula[i-k-1][j+k+1][1][idx2]
+                            prob = prob1 * prob2
+                            elements.append((element, prob))
                     for valor in self.gramatica:
                         for element, prob in elements:
                             for j, mot in enumerate(self.gramatica[valor][0]):
                                 if element == mot:
                                     prob = prob * self.gramatica[valor][1][j]
-                                    if valor in taula[i][j][0]: 
-                                    # Si el valor ja està en la taula, doncs agefem el valor el qual té la probabilitat més alta
+
+                                    if valor in taula[i][j][0]:
                                         idx = taula[i][j][0].index(valor)
                                         if prob > taula[i][j][1][idx]:
                                             taula[i][j][1][idx] = prob

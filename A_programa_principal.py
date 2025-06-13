@@ -3,12 +3,13 @@
 ################################################
 import os
 from B_CKY_alg import CKY
-from D_lectura import llegir_dades, carregar_joc_proves_json	
+from D_lectura import llegir_dades, carregar_joc_proves_json, llegir_dades_prob	
 from C_Trans_gram import GramTrans_CFGtoCNF
 
 def main():
 
     #Nom fitxer de gramàtica
+    prob = False
     print('Introdueix el nom de la gramàtica a provar:')
     print('Opcions:')
     for nom in os.listdir('fitxers'):
@@ -18,14 +19,18 @@ def main():
 
         
     #Llegir gramàtica
-    gramatica = llegir_dades(nom_fitxer)
+    if 'prob' in nom_fitxer:
+        prob = True
+        gramatica = llegir_dades_prob(nom_fitxer)
+    else:
+        gramatica = llegir_dades(nom_fitxer)
 
 
     #TRANSDORMACIO OBLIGATORIIIIAAAAA
     #FER SERVIR METODE es_cnf per saber si la gramàtica és CNF
     #Transformar gramàtica a CNF
     gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
-    if gram.es_cnf():
+    if gram.es_cnf() or prob:
         print('La gramàtica ja està en CNF.')
     else:
         print('La gramàtica NO està en CNF.')
@@ -34,7 +39,10 @@ def main():
 
     print()
     #Crear objecte CKY
-    cky = CKY(gramatica, nom_type='det')
+    if prob:
+        cky = CKY(gramatica, nom_type='prob')
+    else:
+        cky = CKY(gramatica, nom_type='det')
     #print('Gramatica carregada correctament.')
 
     print('-'*20)
@@ -44,6 +52,7 @@ def main():
     forma_prova = input('Tria una opció (1/2): ')
     print('-'*20)
 
+    #Pots o generar la teva pròpia paraula, o utilitzar els que oferim en els jocs de prova
     if forma_prova == '1':
         print ('1.PARAULES PROPIES')
         
@@ -51,9 +60,15 @@ def main():
         paraula = input('Paraula: ')
 
         #Resoldre la paraula
-        resultat = cky.resol(paraula)
+        if prob:
+            resultat,probabilitat = cky.resol(paraula)
+        else:
+            resultat = cky.resol(paraula)
         if resultat:
-            print(f'La paraula "{paraula}" és vàlida segons la gramàtica.')
+            if prob:
+                print(f'La paraula "{paraula}" és vàlida segons la gramàtica. Probabilitat: {probabilitat}')
+            else:
+                print(f'La paraula "{paraula}" és vàlida segons la gramàtica.')
             
         else:
             print(f'La paraula "{paraula}" no és vàlida segons la gramàtica.')
@@ -64,9 +79,16 @@ def main():
         print ('2.JOCS DE PROVES')
         for p in dic_joc_proves[nom_fitxer]:
             print(f'Provant la paraula: {p}')
+            if prob:
+                resultat,probabilitat = cky.resol(p)
+            else:
+                resultat = cky.resol(p)
             resultat = cky.resol(p)
             if resultat:
-                print(f'La paraula "{p}" és VÀLIDA segons la gramàtica.')
+                if prob:
+                    print(f'La paraula "{p}" és vàlida segons la gramàtica. Probabilitat: {probabilitat}')
+                else:
+                    print(f'La paraula "{paraula}" és vàlida segons la gramàtica.')
             else:
                 print(f'La paraula "{p}" NO és vàlida segons la gramàtica.')
 

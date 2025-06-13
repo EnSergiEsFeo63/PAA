@@ -38,6 +38,44 @@ def llegir_dades(nom_fitxer):
                     paraula += lletra    
     #print(gramatica)
     return gramatica
+def llegir_dades_prob( nom):
+    # Amb el mètode probabilitstic, no només ens cal llegir els termes, sinó que també s'han de llegir les probabilitats de cada una d'aquestes
+    # La gramàtica doncs serà ara un diccionari clau/valor on el valor consisteix d'una llista de 2 llistes a un un conté els termes,
+    # i l'altre conté les probabilitats
+    gramatica = {}
+    nom += '.txt'
+    directori = os.path.dirname(os.path.abspath(__file__))
+    loc = os.path.join(directori,'fitxers')
+    fitxer = os.path.join(loc, nom)
+    with open(fitxer, 'r') as file:
+        linees = file.readlines()
+        k = 1
+        for i in range(0,len(linees)):
+            norma = linees[i][0]
+            if norma not in gramatica:
+                gramatica[norma] = [[],[]]
+            frase = linees[i]
+            paraula = ''
+            n = 0
+            while frase[n] != '>':
+                n+=1
+            for j in range(n+1,len(frase)):
+                lletra = frase[j]
+                if lletra == '|' or j == len(frase)-1:
+                    if i == len(linees)-1 and j == len(frase)-1:
+                        paraula += lletra
+                    if  k%2 == 0:
+                              #print(k)
+                                #print(paraula)
+                        gramatica[norma][1].append(float(paraula))
+                        k+=1
+                    else:
+                        gramatica[norma][0].append(paraula)
+                        k+=1
+                    paraula = ''
+                elif lletra != '':
+                    paraula += lletra
+    return(gramatica)
 
 
 
