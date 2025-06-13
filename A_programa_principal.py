@@ -24,13 +24,13 @@ def main():
     #TRANSDORMACIO OBLIGATORIIIIAAAAA
     #FER SERVIR METODE es_cnf per saber si la gramàtica és CNF
     #Transformar gramàtica a CNF
-    print('Vols transformar la gramàtica a CNF? (S/N)')
-    resposta = input('Resposta: ').strip().upper()
-    if resposta == 'S':
+    gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
+    if gram.es_cnf():
+        print('La gramàtica ja està en CNF.')
+    else:
+        print('La gramàtica NO està en CNF.')
         gramatica = GramTrans_CFGtoCNF(gramatica).to_cnf()
         print(gramatica)
-    else:
-        print('No s\'ha transformat la gramàtica a CNF.')
 
     print()
     #Crear objecte CKY
