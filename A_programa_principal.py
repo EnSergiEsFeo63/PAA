@@ -83,12 +83,11 @@ def main():
                 resultat,probabilitat = cky.resol(p)
             else:
                 resultat = cky.resol(p)
-            resultat = cky.resol(p)
             if resultat:
                 if prob:
                     print(f'La paraula "{p}" és vàlida segons la gramàtica. Probabilitat: {probabilitat}')
                 else:
-                    print(f'La paraula "{paraula}" és vàlida segons la gramàtica.')
+                    print(f'La paraula "{p}" és vàlida segons la gramàtica.')
             else:
                 print(f'La paraula "{p}" NO és vàlida segons la gramàtica.')
 

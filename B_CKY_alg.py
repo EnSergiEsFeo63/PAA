@@ -32,7 +32,8 @@ class CKY:
         #print(taula)
         if self.metode == 'prob':
             return self.resol_prob(n,taula)
-        return self.resol_det(n,taula)
+        else:
+            return self.resol_det(n,taula)
         
     def combinacions(self, arg1, arg2):
         #Fem les combinacions de tots els valors de les dues cel·les
@@ -66,7 +67,7 @@ class CKY:
         else:
             for i in range(0,len(paraula)):
                 for norma in self.gramatica:
-                    if paraula[i] in self.gramatica[norma][0]:
+                    if paraula[i] in self.gramatica[norma]:
                         taula[0][i].append(norma) #Per determinista només cal passar el valor i res més
         #print(taula)
         return taula
@@ -85,21 +86,32 @@ class CKY:
                                 taula[i][j].append(valor)
         if 'S' in taula[n-1][0]:
             return True
+        #print(taula)
         return False
-        
     def resol_prob(self,n,taula):
         #print(self.gramatica)
+        #print(taula)
         for i in range(0,n):
             for j in range(0,n-i):
-                for k in range(0,i):                  
-                    elements = self.combinacions(taula[k][j],taula[i-k-1][j+k+1] )
+                # Ensure the structure is properly initialized
+                if not isinstance(taula[i][j], list) or len(taula[i][j]) < 2:
+                    taula[i][j] = [[], []]
+                
+                for k in range(0,i):
+                    # Skip if either table cell doesn't have the proper structure
+                    if k >= len(taula) or j >= len(taula[k]) or not isinstance(taula[k][j], list) or len(taula[k][j]) < 2:
+                        continue
+                    if i-k-1 >= len(taula) or j+k+1 >= len(taula[i-k-1]) or not isinstance(taula[i-k-1][j+k+1], list) or len(taula[i-k-1][j+k+1]) < 2:
+                        continue
+                        
+                    elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
                     for valor in self.gramatica:
                         for element, prob in elements:
-                            for j, mot in enumerate(self.gramatica[valor][0]):
+                            for idx, mot in enumerate(self.gramatica[valor][0]):  # Changed j to idx to avoid shadowing
                                 if element == mot:
-                                    prob = prob * self.gramatica[valor][1][j]
+                                    prob = prob * self.gramatica[valor][1][idx]
                                     if valor in taula[i][j][0]: 
-                                    # Si el valor ja està en la taula, doncs agefem el valor el qual té la probabilitat més alta
+                                        # Si el valor ja està en la taula, doncs agefem el valor el qual té la probabilitat més alta
                                         idx = taula[i][j][0].index(valor)
                                         if prob > taula[i][j][1][idx]:
                                             taula[i][j][1][idx] = prob
@@ -116,3 +128,4 @@ class CKY:
             #print(f"Probabilitat: {probabilitat}")
             return True,probabilitat
         return False,None
+    
