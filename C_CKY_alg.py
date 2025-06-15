@@ -98,17 +98,8 @@ class CKY:
         #print(taula)
         for i in range(0,n):
             for j in range(0,n-i):
-                # Ensure the structure is properly initialized
-                if not isinstance(taula[i][j], list) or len(taula[i][j]) < 2:
-                    taula[i][j] = [[], []]
-                
+                                
                 for k in range(0,i):
-                    # Skip if either table cell doesn't have the proper structure
-                    if k >= len(taula) or j >= len(taula[k]) or not isinstance(taula[k][j], list) or len(taula[k][j]) < 2:
-                        continue
-                    if i-k-1 >= len(taula) or j+k+1 >= len(taula[i-k-1]) or not isinstance(taula[i-k-1][j+k+1], list) or len(taula[i-k-1][j+k+1]) < 2:
-                        continue
-                        
                     elements = self.combinacions(taula[k][j], taula[i-k-1][j+k+1])
                     for valor in self.gramatica:
                         for element, prob in elements:

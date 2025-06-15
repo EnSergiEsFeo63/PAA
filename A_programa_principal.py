@@ -43,8 +43,8 @@ def main():
         
         #convertir per poder aplicar CKY
     
-    gramatica = {lhs: [''.join(rhs) for rhs in rhss]
-                    for lhs, rhss in gram.grammar.items()}
+        gramatica = {lhs: [''.join(rhs) for rhs in rhss]
+                        for lhs, rhss in gram.grammar.items()}
                         
 
     #Crear objecte CKY
