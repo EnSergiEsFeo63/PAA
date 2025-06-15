@@ -26,25 +26,27 @@ def main():
         gramatica = llegir_dades(nom_fitxer)
 
 
-    #FER SERVIR METODE es_cnf per saber si la gramàtica és CNF
-    #Transformar gramàtica a CNF
-    #gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
+    #Convertir en CNF
+
+    #Comprovar si la gramàtica és CNF (es_cnf)
     gram= GramTrans_CFGtoCNF(gramatica)
     if gram.es_cnf() or prob:
-        #print('original:', gramatica)
         print('La gramàtica ja està en CNF.')
+
+    #convertir
     else:
         print('La gramàtica NO està en CNF.')
-        print('gram:ORIGINAL', gramatica)
-        gramatica = GramTrans_CFGtoCNF(gramatica).to_cnf()
-        #print(gramatica)
+        gram.to_cnf() #transformar a CNF
+        print('Gramatica transformada a CNF:')
 
-    print()    
-    print('DESPRÉS DE LA TRANSFORMACIÓ A CNF:')
-    gram_1= GramTrans_CFGtoCNF(gramatica)
-    print('Comprovar que gramatica està en CNF', gram_1.es_cnf())    
+        print ('Comprovació:', gram.es_cnf())
+        
+        #convertir per poder aplicar CKY
+    
+    gramatica = {lhs: [''.join(rhs) for rhs in rhss]
+                    for lhs, rhss in gram.grammar.items()}
+                        
 
-    print()
     #Crear objecte CKY
     if prob:
         cky = CKY(gramatica, nom_type='prob')

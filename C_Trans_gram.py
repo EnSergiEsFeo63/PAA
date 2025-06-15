@@ -16,19 +16,28 @@ class GramTrans_CFGtoCNF:
         return f'X{self.new_var_count}'
     
     def es_cnf(self):
-        for lhs, rhss in self.original.items():
+        for lhs, rhss in self.grammar.items():
             for rhs in rhss:
+                #simbol inicial pot tenir produccio buida
+                if rhs ==[]:
+                    if lhs != self.start_sym:
+                        return False
+                    continue
+                #Produccions de un sol simbol --> ha de ser 100% terminal (minuscula)
                 if len(rhs) == 1:
                     if rhs[0].isupper():
-                        return False  # A → B no CNF (B és no-terminal)
+                        return False 
+                # Per producciones binaries (A → BC) --> dos simbols han de ser NO termianls (mayuscules)
                 elif len(rhs) == 2:
                     if not all(sym.isupper() for sym in rhs):
-                        return False  # A → BC (ha de ser amb no-terminals)
-                else:
+                        return False 
+                else: #cap altre forma es valida
                     return False
         return True
 
 
+    #PAS1: Eliminar NULLS (epsilon-produccions--> categoritzat com a @empty)
+     
     def eliminar_epsiolon(self):
         s= set()
         # Trobar les produccions epsilon
@@ -63,48 +72,78 @@ class GramTrans_CFGtoCNF:
         
         self.grammar = new_grammar
 
+    def ajustar_inicial_epsilon(self): #aplicar si es pot derivar indirectament epsilon de sim inicial
+        def pot_ind_fer_epsilon(nt,vist=set()):
+            #funcio auxiliar per comprovar si no-term pot derivar epsilon
+            if nt in vist:
+                return False
+            vist.add(nt)
+            for rhs in self.grammar.get(nt, []):
+                if rhs == []:
+                    return True
+                if all(sym in self.grammar and pot_ind_fer_epsilon(sym, vist.copy()) for sym in rhs):
+                    return True
+            return False
+        
+        if pot_ind_fer_epsilon(self.start_sym):
+            # Mirar sim inicial: si es pot afeguir S -> []
+            if [] not in self.grammar[self.start_sym]:
+                self.grammar[self.start_sym].append([])
 
+        #eliminar les buides no permeses (la resta no-term que no son S)
+        no_term= list(self.grammar.keys())
+        for nt in no_term:
+            if nt !=self.start_sym: #si conte buides i no es inicial --> eliminar
+                self.grammar[nt] = [rhs for rhs in self.grammar[nt] if rhs != []]
+                if not self.grammar[nt]:  
+                    del self.grammar[nt]  #si queda buit --> eliminar
 
     
 
     def remove_units(self):
+        #eliminar unitaries ja no existeixen
+        for lhs in self.grammar:
+            self.grammar[lhs] = [
+                rhs for rhs in self.grammar[lhs]
+                if not (len(rhs) == 1 and rhs[0].isupper() and rhs[0] not in self.grammar)
+                                          #no eliminar las no terminals (minuscules)
+            ]
+                                
         unit_p=set()
         # Trobar les produccions unitàries
-        for lhs, rhss in self.grammar.items():
-            for rhs in rhss:
+        for A in self.grammar:
+            for rhs in self.grammar[A]:
                 if len(rhs) == 1 and rhs[0] in self.grammar:
-                    unit_p.add((lhs, rhs[0]))
-
+                    unit_p.add((A, rhs[0])) #trobar unitaries (A -> B)
+        # tractar:
         changed = True
         while changed:
             changed = False
-            for A,B in list(unit_p):
-                for C, rhss in self.grammar.items():
-                    if B == C:
-                        for rhs in rhss:
-                            if len(rhs) == 1 and rhs[0] in self.grammar:
-                                if (A, rhs[0]) not in unit_p:
-                                    unit_p.add((A, rhs[0]))
-                                    changed = True
+            noves_p= set(unit_p)
+            for (A,B) in unit_p:
+                for (C,D) in unit_p:
+                    if B == C and (A, D) not in unit_p:
+                        noves_p.add((A, D))
+                        changed = True
+            unit_p = noves_p
 
+        #nova gram --> sense unitaries
         new_grammar = {}
-        for A,rhss in self.grammar.items():
-            filt_rules= [] 
-            for rhs in rhss:
-                #long 1 i unic simbol no-terminal --> saltar
-                if len(rhs) == 1 and rhs[0] in self.grammar:
-                    continue 
-                filt_rules.append(rhs)
-            new_grammar[A] = filt_rules
+        for A in self.grammar:
+            new_grammar[A] = []
+            for rhs in self.grammar[A]:
+                if not (len(rhs) == 1 and rhs[0] in self.grammar):
+                    new_grammar[A].append(rhs)
 
-        for A, B in unit_p:
-            if A!=B:
-                for rhs in self.grammar.get(B,[]):
+        #afegir unitaries
+        for (A,B) in unit_p:
+            for rhs in self.grammar[B]:
+                if not (len(rhs)== 1 and rhs[0] in self.grammar):
                     if rhs not in new_grammar[A]:
                         new_grammar[A].append(rhs)
+
         self.grammar = new_grammar
-
-
+        print('Aaaaaa',self.grammar)
 
     ######
     #PENDENT REVISAR
@@ -154,36 +193,41 @@ class GramTrans_CFGtoCNF:
             return self.grammar
         print("Transformant la gramàtica a CNF...")
 
-        #0. convertir cada producció de string a LLISTA de símbols
+        #APLICAR TRANSFORMACIÓ
+        # 0. convertir cada producció de string a LLISTA de símbols
         #[algoritme i transformació s'han plantejat diferent i cal transformar el format]
+        
         for lhs in self.grammar:
             noves_produccions = []
             #tractar produccio buida epsilon --> @empty
             for rhs in self.grammar[lhs]:
-
                 if rhs == '@empty':
                     noves_produccions.append([])  # representa epsilon internament
-
                 else:
                     noves_produccions.append(list(rhs))
             self.grammar[lhs] = noves_produccions
-        #Aplicar les transformacions necessàries
+        
+        #1. Aplicar les transformacions necessàries
+        #A. Tractar produccions buides (epsilon-produccions)
         self.eliminar_epsiolon()
-        print("Produccions epsilon eliminades.")
+        #afegir S->[] si es pot derivar de forma indirecta
+        self.ajustar_inicial_epsilon()
+        print("Produccions epsilon eliminades i ajustades.")
+        print(self.grammar)
 
-       
-        print(self.grammar)
+        #B. Eliminar unitàries
         self.remove_units()
-        print("Produccions epsilon i unitàries eliminades.")
+        print("Produccions unitàries eliminades.")
         print(self.grammar)
+
+        #C.Convertir terminals
         self.convert_terminals()
         print("Produccions de terminals convertides.")
         print(self.grammar)
+
+        #D. Trencar regles llargues
         self.break_long_rules()
+        print("Regles llargues trencades.")
+        print(self.grammar)
 
-        #convertir format apte per CKY
-        final_grammar={}
-        for lhs, rhss in self.grammar.items():
-            final_grammar[lhs] = [''.join(rhs) for rhs in rhss]
-
-        return final_grammar
+        return self.grammar #retornar gram en CNF (no format apte per CKY, cal transformació)
