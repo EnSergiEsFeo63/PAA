@@ -34,7 +34,7 @@ class GramTrans_CFGtoCNF:
         # Trobar les produccions epsilon
         for lhs, rhss in self.grammar.items():
             for rhs in rhss:
-                if rhs== ['ε'] or rhs == []:
+                if rhs == ['ε'] or rhs == ['??'] or rhs == ['@empty'] or rhs == []:
                     s.add(lhs)
         changed = True
         while changed:
@@ -82,7 +82,7 @@ class GramTrans_CFGtoCNF:
                 for C, rhss in self.grammar.items():
                     if B == C:
                         for rhs in rhss:
-                            if rhs[0] in self.grammar and len(rhs) == 1:
+                            if len(rhs) == 1 and rhs[0] in self.grammar:
                                 if (A, rhs[0]) not in unit_p:
                                     unit_p.add((A, rhs[0]))
                                     changed = True
@@ -157,11 +157,21 @@ class GramTrans_CFGtoCNF:
         #0. convertir cada producció de string a LLISTA de símbols
         #[algoritme i transformació s'han plantejat diferent i cal transformar el format]
         for lhs in self.grammar:
-            self.grammar[lhs] = [list(rhs) for rhs in self.grammar[lhs]]
+            noves_produccions = []
+            #tractar produccio buida epsilon --> @empty
+            for rhs in self.grammar[lhs]:
 
+                if rhs == '@empty':
+                    noves_produccions.append([])  # representa epsilon internament
+
+                else:
+                    noves_produccions.append(list(rhs))
+            self.grammar[lhs] = noves_produccions
         #Aplicar les transformacions necessàries
         self.eliminar_epsiolon()
         print("Produccions epsilon eliminades.")
+
+       
         print(self.grammar)
         self.remove_units()
         print("Produccions epsilon i unitàries eliminades.")

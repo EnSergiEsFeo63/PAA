@@ -118,7 +118,10 @@ def llegir_joc_proves_json(json_path='fitxers/joc_proves.json'):
                 dic_joc_proves[nom_fitxer] = {}
             next = item()
             while next != 'end':
-                paraula = next
+                paraula = next.strip()
+                #tractar cadena buida (ε --> llegida com  ??)
+                if paraula in {'@empty', 'ε', '??'}or paraula.replace('"', '') == '':
+                    paraula = ''
                 bool_p = item()
                 bool_p= True if bool_p == 'T' else False  # Convertir a booleà
                 if paraula not in dic_joc_proves[nom_fitxer]:

@@ -73,5 +73,14 @@
     "acb": false,
     "aabc": false,
     "bc": false
+  },
+  "gram_CFG_epsilon": {
+    "ab": true,
+    "a": false,
+    "b": true,
+    "": true,
+    "aa": false,
+    "bb": false,
+    "ba": false
   }
 }

@@ -88,5 +88,15 @@ bc F
 end
 
 
+new_gram
+gram_CFG_epsilon
+ab T
+a F
+b T
+"" T
+aa F
+bb F
+ba F
+end
 
 finalitzar
