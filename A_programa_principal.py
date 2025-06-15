@@ -26,19 +26,23 @@ def main():
         gramatica = llegir_dades(nom_fitxer)
 
 
-    #TRANSDORMACIO OBLIGATORIIIIAAAAA
     #FER SERVIR METODE es_cnf per saber si la gramàtica és CNF
     #Transformar gramàtica a CNF
-    print(gramatica)
-    gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
+    #gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
+    gram= GramTrans_CFGtoCNF(gramatica)
     if gram.es_cnf() or prob:
-        print('original:', gramatica)
+        #print('original:', gramatica)
         print('La gramàtica ja està en CNF.')
     else:
         print('La gramàtica NO està en CNF.')
         print('gram:ORIGINAL', gramatica)
         gramatica = GramTrans_CFGtoCNF(gramatica).to_cnf()
-        print(gramatica)
+        #print(gramatica)
+
+    print()    
+    print('DESPRÉS DE LA TRANSFORMACIÓ A CNF:')
+    gram_1= GramTrans_CFGtoCNF(gramatica)
+    print('Comprovar que gramatica està en CNF', gram_1.es_cnf())    
 
     print()
     #Crear objecte CKY
@@ -55,7 +59,7 @@ def main():
     forma_prova = input('Tria una opció (1/2): ')
     print('-'*20)
 
-    #Pots o generar la teva pròpia paraula, o utilitzar els que oferim en els jocs de prova
+    #Pots o generar la teva pròpia paraula, o utilitzar els jocs de prova
     if forma_prova == '1':
         print ('1.PARAULES PROPIES')
         
@@ -79,6 +83,7 @@ def main():
 
 
     if forma_prova == '2':
+        comp=[]
         print ('2.JOCS DE PROVES')
         for p in dic_joc_proves[nom_fitxer]:
             print(f'Provant la paraula: {p}')
@@ -96,8 +101,12 @@ def main():
 
             #comprovar si la paraula és correcta segons el joc de proves
             
+            comp.append(resultat == dic_joc_proves[nom_fitxer][p])
             print('Comprovació:', resultat == dic_joc_proves[nom_fitxer][p])
-            
+        print('-'*20)
+        print('Resultats de la comprovació (junts):')
+        print(comp)      
+        print('-'*20)  
 
 
 
