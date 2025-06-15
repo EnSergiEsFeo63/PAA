@@ -91,12 +91,24 @@ end
 new_gram
 gram_CFG_epsilon
 ab T
-a F
 b T
 "" T
+a F
 aa F
 bb F
 ba F
 end
+
+new_gram
+gram_CFG_mix_t
+ab T
+bb T
+b T
+a F
+ba F
+"" F
+aab F
+end
+
 
 finalitzar

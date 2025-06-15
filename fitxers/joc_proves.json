@@ -76,11 +76,20 @@
   },
   "gram_CFG_epsilon": {
     "ab": true,
-    "a": false,
     "b": true,
     "": true,
+    "a": false,
     "aa": false,
     "bb": false,
     "ba": false
+  },
+  "gram_CFG_mix_t": {
+    "ab": true,
+    "bb": true,
+    "b": true,
+    "a": false,
+    "ba": false,
+    "": false,
+    "aab": false
   }
 }
