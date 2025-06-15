@@ -1,5 +1,5 @@
 import os
-#Get-Content .\fitxers\joc_proves.txt | python D_lectura.py
+#Get-Content .\fitxers\joc_proves.txt | python B_lectura.py
 from pytokr import pytokr
 import json
 

@@ -2,9 +2,9 @@
 #PROGRAMA PER LLEGUIR I EXECUTAR LLOCS DE PROVES
 ################################################
 import os
-from B_CKY_alg import CKY
-from D_lectura import llegir_dades, carregar_joc_proves_json, llegir_dades_prob	
-from C_Trans_gram import GramTrans_CFGtoCNF
+from C_CKY_alg import CKY
+from B_lectura import llegir_dades, carregar_joc_proves_json, llegir_dades_prob	
+from D_Trans_gram import GramTrans_CFGtoCNF
 
 def main():
 
