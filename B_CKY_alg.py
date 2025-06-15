@@ -26,6 +26,11 @@ class CKY:
     
     def resol(self, paraula):
         n = len(paraula)
+        #cas especial per paraules buida
+        if n == 0:
+            return 'S' in self.gramatica and '' in self.gramatica['S']
+
+
         taula = self.crear_taula(n)
         #print(taula)
         taula = self.nivell1(taula,paraula)
