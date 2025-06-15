@@ -31,14 +31,14 @@ class GramTrans_CFGtoCNF:
                 elif len(rhs) == 2:
                     if not all(sym.isupper() for sym in rhs):
                         return False 
-                else: #cap altre forma es valida
+                else: #la resta tampoc es valid
                     return False
         return True
 
 
     #PAS1: Eliminar NULLS (epsilon-produccions--> categoritzat com a @empty)
      
-    def eliminar_epsiolon(self):
+    def eliminar_epsilon(self):
         s= set()
         # Trobar les produccions epsilon
         for lhs, rhss in self.grammar.items():
@@ -99,9 +99,9 @@ class GramTrans_CFGtoCNF:
                     del self.grammar[nt]  #si queda buit --> eliminar
 
     
-
-    def remove_units(self):
-        #eliminar unitaries ja no existeixen
+    #PAS2: Eiminar unitàries
+    def eliminar_unitaries(self):
+        #eliminar unitaries ja no existeixen --> es poden haver eliminat amb ajustar_inicial_epsilon
         for lhs in self.grammar:
             self.grammar[lhs] = [
                 rhs for rhs in self.grammar[lhs]
@@ -143,21 +143,20 @@ class GramTrans_CFGtoCNF:
                         new_grammar[A].append(rhs)
 
         self.grammar = new_grammar
-        print('Aaaaaa',self.grammar)
 
-    ######
-    #PENDENT REVISAR
-    ######
-    def convert_terminals(self):
-        terminal_map = {}
-        new_rules = {}
+    #PAS3: Convertir terminals
+    #tractar produccions mixtes entre terminals i no-terminals (A->aB, A->a)
+    def convertir_mixtes(self):
+        terminal_map = {} #substituits
+        new_rules = {} #noves regles [com a Xn]
         for lhs, rhss in self.grammar.items():
             new_rhss = []
             for rhs in rhss:
                 if len(rhs) > 1:
+                    #com té més d'un simbol -> mirar si son terminals no aptes
                     new_rhs = []
                     for sym in rhs:
-                        if sym not in self.grammar and not sym.isupper():
+                        if sym not in self.grammar and not sym.isupper():#mirar si es terminal(minuscules)
                             if sym not in terminal_map:
                                 var = self._nova_var()
                                 terminal_map[sym] = var
@@ -169,21 +168,23 @@ class GramTrans_CFGtoCNF:
                 else:
                     new_rhss.append(rhs)
             self.grammar[lhs] = new_rhss
-        self.grammar.update(new_rules)
 
+        self.grammar.update(new_rules) #actualitzar gram amb les noves regles
 
-    def break_long_rules(self):
-        new_rules = {}
+    #PAS4: Trencar regles llargues (Unicament permes regles BI no terminals)
+    def trencar_regles_no_bi(self):
+        new_rules = {} #guardar noves regles
         for lhs, rhss in self.grammar.items():
             new_rhss = []
             for rhs in rhss:
-                while len(rhs) > 2:
-                    new_var = self._nova_var()
+                while len(rhs) > 2: #trencat si més de 2 simbols
+                    new_var = self._nova_var() #es crea un bi amb els dos ultims simbols
                     new_rules[new_var] = [[rhs[1], rhs[2]]]
-                    rhs = [rhs[0], new_var] + rhs[3:]
+                    rhs = [rhs[0], new_var] + rhs[3:] 
+                    #continua si encara no son totes bi
                 new_rhss.append(rhs)
-            self.grammar[lhs] = new_rhss
-        self.grammar.update(new_rules)
+            self.grammar[lhs] = new_rhss #substituir 
+        self.grammar.update(new_rules) #actualitzar gram amb les noves regles
 
 
 #REVISAT
@@ -209,25 +210,26 @@ class GramTrans_CFGtoCNF:
         
         #1. Aplicar les transformacions necessàries
         #A. Tractar produccions buides (epsilon-produccions)
-        self.eliminar_epsiolon()
+        self.eliminar_epsilon()
         #afegir S->[] si es pot derivar de forma indirecta
         self.ajustar_inicial_epsilon()
         print("Produccions epsilon eliminades i ajustades.")
         print(self.grammar)
 
         #B. Eliminar unitàries
-        self.remove_units()
+        self.eliminar_unitaries()
         print("Produccions unitàries eliminades.")
         print(self.grammar)
 
         #C.Convertir terminals
-        self.convert_terminals()
+        self.convertir_mixtes()
         print("Produccions de terminals convertides.")
         print(self.grammar)
 
         #D. Trencar regles llargues
-        self.break_long_rules()
+        self.trencar_regles_no_bi()
         print("Regles llargues trencades.")
         print(self.grammar)
 
         return self.grammar #retornar gram en CNF (no format apte per CKY, cal transformació)
+                            #Transformació en A_programa_principal.py
