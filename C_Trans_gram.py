@@ -4,262 +4,176 @@
 import copy
 
 class GramTrans_CFGtoCNF:
-    def __init__(self, gram_original):
-        """
-        gram_original: gram CFG a transformar (list)
-        """
-        self.gram_org = gram_original #gram original (argument de la instancia)
-        #primer simbol:
-        self.start= next(iter(gram_original.keys())) #primer simbol no terminal (start symbol)
-        #no terminals:
-        self.no_term= set(gram_original.keys())
-        #termiansl:
-        self.term= {t for rhss in gram_original.values() for rhs in rhss for t in rhs if self._es_terminal(t)}
-        
-        self.P = copy.deepcopy(gram_original) # copia profunda original --> no modifica estructura original gram_org 
-        #Nous simbols 
-        self.contador = 0 #comptador per generar nous
-        self.S0= self._new_no_term('S0') 
+    def __init__(self, gram):
+        self.original= copy.deepcopy(gram)
+        self.grammar= copy.deepcopy(gram)
+        self.new_var_count = 0 # comptador per generar nous no terminals únics
+        self.start_sym= next(iter(gram))
 
-    #mirar si ja esta en formar CNF
+
+    def _nova_var(self):
+        self.new_var_count += 1
+        return f'X{self.new_var_count}'
+    
     def es_cnf(self):
-        #return True si ja es CNF
-        for A,rhss in self.gram_org.items():
+        for lhs, rhss in self.original.items():
             for rhs in rhss:
-                symbol= rhs if isinstance(rhs, list) else list(rhs) #convertir a llista si no ho és
-                #convertir a llista els simbols terminals
-                if len(symbol)==1:
-                    if symbol[0] not in self.term:
-                        return False
-                elif len(symbol) == 2:
-                    if any(X not in self.no_term for X in symbol):
-                        return False
+                if len(rhs) == 1:
+                    if rhs[0].isupper():
+                        return False  # A → B no CNF (B és no-terminal)
+                elif len(rhs) == 2:
+                    if not all(sym.isupper() for sym in rhs):
+                        return False  # A → BC (ha de ser amb no-terminals)
                 else:
-                    return False #longitud superior
+                    return False
         return True
+
+
+    def eliminar_epsiolon(self):
+        s= set()
+        # Trobar les produccions epsilon
+        for lhs, rhss in self.grammar.items():
+            for rhs in rhss:
+                if rhs== ['ε'] or rhs == []:
+                    s.add(lhs)
+        changed = True
+        while changed:
+            changed = False
+            for lhs, rhss in self.grammar.items():
+                for rhs in rhss:
+                    if any(sym in s for sym in rhs) and lhs not in s:
+                        s.add(lhs)
+                        changed = True
+        #noves produccions (sense simbols null)
+        new_grammar = {}
+        for lhs, rhss in self.grammar.items():
+            new_rhss = set()
+            for rhs in rhss:
+                #incloure original
+                new_rhss.add(tuple(rhs)) 
+                n_pos= [i for i, sym in enumerate(rhs) if sym in s]
+                
+                from itertools import combinations,chain
+                for r in range(1, len(n_pos) +1):
+                    for to_remove in combinations(n_pos, r):
+                        new_rhs=[sym for i, sym in enumerate(rhs) if i not in to_remove]
+                        if new_rhs:
+                            new_rhss.add(tuple(new_rhs))
+            new_grammar[lhs]= [list(rhs) for rhs in new_rhss ]
+        
+        self.grammar = new_grammar
+
+
+
     
 
+    def remove_units(self):
+        unit_p=set()
+        # Trobar les produccions unitàries
+        for lhs, rhss in self.grammar.items():
+            for rhs in rhss:
+                if len(rhs) == 1 and rhs[0] in self.grammar:
+                    unit_p.add((lhs, rhs[0]))
 
-    def _es_terminal(self, simbol):
-        """
-        True si simbol no és no_terminal ni cadena buida (ε).
-        """
-        return not (simbol in self.no_term or simbol == 'ε')
+        changed = True
+        while changed:
+            changed = False
+            for A,B in list(unit_p):
+                for C, rhss in self.grammar.items():
+                    if B == C:
+                        for rhs in rhss:
+                            if rhs[0] in self.grammar and len(rhs) == 1:
+                                if (A, rhs[0]) not in unit_p:
+                                    unit_p.add((A, rhs[0]))
+                                    changed = True
 
-    def _new_no_term(self, prefix:str):
-        """
-        Genera nou simbol no terminal únic basat en un prefix donat.
-        """
-        while True:
-            self.contador += 1
-            nou_no_term = f"{prefix}{self.contador}"
-            if nou_no_term not in self.no_term: #incloure en no_term (si no existeix previament)
-                self.no_term.add(nou_no_term)
-                return nou_no_term
+        new_grammar = {}
+        for A,rhss in self.grammar.items():
+            filt_rules= [] 
+            for rhs in rhss:
+                #long 1 i unic simbol no-terminal --> saltar
+                if len(rhs) == 1 and rhs[0] in self.grammar:
+                    continue 
+                filt_rules.append(rhs)
+            new_grammar[A] = filt_rules
 
-    ###########
-    #metodes privats 
-    ###########
-    def _add_start_symbol(self):
-        #afegrir un nou start symbol S0
-        self.P[self.S0] = [[self.start]]  # afegir gram original com a producció de S0
-        
+        for A, B in unit_p:
+            if A!=B:
+                for rhs in self.grammar.get(B,[]):
+                    if rhs not in new_grammar[A]:
+                        new_grammar[A].append(rhs)
+        self.grammar = new_grammar
 
-    def _remove_epsilon_productions(self):
-        """
-        elimina produccions buides (ε-productions) en termes P.
-        """
-        # 1) Trobar epsilon-produccions --> sempre representades com 'ε' en les regles de producció, no com list buide []
-        epsilon_productions = {nt for nt, rhss in self.P.items() if any(rhs == ['ε'] for rhs in rhss)}
-        change = True
-        while change:
-            change = False
-            for A, rhss in self.P.items():
-                for rhs in rhss:
-                    if all(X in epsilon_productions for X in rhs) and A not in epsilon_productions:
-                        epsilon_productions.add(A)
-                        change = True
-        # Ara epsilon_productions conté les variables que poden derivar a ε
-        
-        # 2) Reescriure produccions (eliminar ε-produccions)
-        from itertools import chain, combinations
-        new_P = {}
 
-        for A, rhss in self.P.items():
+
+    ######
+    #PENDENT REVISAR
+    ######
+    def convert_terminals(self):
+        terminal_map = {}
+        new_rules = {}
+        for lhs, rhss in self.grammar.items():
             new_rhss = []
             for rhs in rhss:
-                #index simbol epsilon-productions en rhs
-                null_pos= [i for i, X in enumerate(rhs) if X in epsilon_productions]
-                #Si no hiha simbols nullables --> conservar regla original
-                if not null_pos:
-                    if rhs not in new_rhss:
-                        new_rhss.append(list(rhs))
-                        continue
-                #Si hi ha nullables, generar noves produccions (sense els nullables)
-                for remove in chain.from_iterable(combinations(null_pos, r) for r in range(len(null_pos) + 1)):
-                    if set(remove)== set(null_pos) and A!=self.S0:
-                        continue
-                    new_rhs = [X for i, X in enumerate(rhs) if i not in remove]
-                    if not new_rhs: #si queda buida representem com ε
-                        new_rhs = ['ε']
-                    if new_rhs not in new_rhss:
-                        new_rhss.append(new_rhs) #evitar duplicats
-                    
-            # Save totes produccions no buides (ε-productions)
-            # menys si A es S0 --> el nou inici pot derivar a ε
-            new_P[A]=[rhs for rhs in new_rhss if rhs != ['ε'] or A == self.S0]
-
-        self.P = new_P
-
-
-    def _remove_unit_productions(self): #despres d'aplicar --> no queden regles on RHS sigui un sol no terminal
-        """
-        Elimina unit productions (produccions unitàries) de la gramàtica.
-        A--> B (on A i B són no terminals).
-        """
-        # 1) Conj parells unitaris directes
-        unit_pairs= {
-            #recorrer cada no terminal A i les seves produccions 
-            (A, rhs[0]) 
-            for A, rhss in self.P.items() 
-            for rhs in rhss 
-            if len(rhs) == 1 and rhs[0] in self.no_term #si la llista RHS es un sol terme (inclos en no_terminals)
-            }                                           #Incloure en unit_pairs        }
-
-        # 2) Busquem cadenes unitaries transitives i tanquem
-        #si A → B i B → C, llavors A → C també és una unit production
-        unit_pairs= set() 
-
-        for A in self.no_term: 
-            visited = set()
-            stack = [A]
-            while stack:
-                X = stack.pop()
-                for rhs in self.P.get(X, []):
-                    if len(rhs) == 1 and rhs[0] in self.no_term:
-                        B = rhs[0]
-                        if B not in visited:
-                            visited.add(B)
-                            unit_pairs.add((A, B))
-                            stack.append(B)
-
-        #print('Unit pairs:', unit_pairs)
-        # 3) Nova taula de produccions (treure unit productions)
-        new_P = { #Copiar no unitaries
-            A: [rhs for rhs in rhss #filtrar unicament no siguin unitaris
-                if not (len(rhs) == 1 and rhs[0] in self.no_term) #eliminar unit productions
-                ]
-            for A, rhss in self.P.items()
-        }
-        # 4) Afegir produccions transitives
-        #print('New_p ANTES TRANSFER:',new_P['S01'])
-        for (A,B) in unit_pairs:
-            for rhs in self.P.get(B, []):
-                if not (len(rhs) == 1 and rhs[0] in self.no_term):
-                    if rhs not in new_P[A]:
-                        new_P[A].append(rhs)
-        #print('New_p DESPUES TRANSFER:',new_P['S01'])
-        # 5) Actualitzar P 
-        self.P = new_P                
-
-
-    def _remove_long_right_hand_sides(self):
-        """
-        Fragmentar les regles llargues A-> B1 B2 ... Bn
-        on n > 2, en regles més curtes A -> B1 C1, C1 -> B2 C2, ..., Cn-1 -> Bn.
-        """
-        term={}
-        new_P = {}
-
-        for A, rhss in self.P.items():
-            #print(f'Procesar {A}--> {rhss}')
-            new_rhss = []
-
-            for rhs in rhss:
-                #print(f'  Analizar RHS: {rhs}')
-                #1) Substituir termianls si RHS té més de 1 simbol
-
-                if len(rhs) > 1 :
-                    rhs2=[]
-
-                    for X in rhs:
-                        if self._es_terminal(X):
-                            T=term.get(X) 
-                            if not T:           # o crea nou terminal
-                                T= self._new_no_term(f'T_{X}')
-                                term[X] = T
-                                #afeguir la regla T-> X
-                                new_P.setdefault(T, []).append([X])
-                                #print(f'Creat {T}--> {X}')
-
-                            rhs2.append(T)
-                            #print(f"    → Substitució terminal: {X} → {T}")
-                            
+                if len(rhs) > 1:
+                    new_rhs = []
+                    for sym in rhs:
+                        if sym not in self.grammar and not sym.isupper():
+                            if sym not in terminal_map:
+                                var = self._nova_var()
+                                terminal_map[sym] = var
+                                new_rules[var] = [[sym]]
+                            new_rhs.append(terminal_map[sym])
                         else:
-                            rhs2.append(X)
-                    
-                    #print(f'Despres substitució: {rhs2}')
-                
-                else: #es sols un terminal 
-                    rhs2= rhs.copy() 
-                    #print(f"    → RHS de longitud 1, sin sustituciones: {rhs2}")
-
-                #2) Si té més de 2 símbols, FRAGMENTACIÓ en regles binaries
-                if len(rhs2) <=2:
-                    new_rhss.append(rhs2)
+                            new_rhs.append(sym)
+                    new_rhss.append(new_rhs)
                 else:
-                    # Fragmentar en regles binàries
-                    prev= rhs2[0]  
-                    for i in range(1, len(rhs2) - 1):
-                        next_no_term = self._new_no_term('Z')
-                        new_rhss.append([prev, next_no_term])  # A -> B1 C1
-                        
-                        #print(f"    → Fragmentació: {prev} → {next_no_term}")
-                        
-                        prev = next_no_term  # Actualitzar prev per la següent iteració
-                    
-                    new_rhss.append([prev, rhs2[-1]])   
-                    #print(f'fragmentacio {prev} → {rhs2[-1]}')
-                
-            new_P[A] = new_rhss  # Afegir regles noves a la gramàtica
-        
-        ####Acabar bucle principal####    
-        self.P = new_P  # Actualitzar la gramàtica amb les noves regles
+                    new_rhss.append(rhs)
+            self.grammar[lhs] = new_rhss
+        self.grammar.update(new_rules)
 
 
+    def break_long_rules(self):
+        new_rules = {}
+        for lhs, rhss in self.grammar.items():
+            new_rhss = []
+            for rhs in rhss:
+                while len(rhs) > 2:
+                    new_var = self._nova_var()
+                    new_rules[new_var] = [[rhs[1], rhs[2]]]
+                    rhs = [rhs[0], new_var] + rhs[3:]
+                new_rhss.append(rhs)
+            self.grammar[lhs] = new_rhss
+        self.grammar.update(new_rules)
 
-    ####################
-    # METODE PER TRANSFORMACIÓ
-    ####################
+
+#REVISAT
     def to_cnf(self):
         if self.es_cnf():
             print("La gramàtica ja està en CNF.")
-            return self.P
-        else:
-            print("Transformant gramàtica CFG a CNF...")
-            #Transforma gramàtica CFG a CNF.
-            #Retorna gramàtica en CNF.
+            return self.grammar
+        print("Transformant la gramàtica a CNF...")
 
-            appears_in_rhs = any(self.start in rhs
-                    for rhss in self.P.values() for rhs in rhss)
-                
-            has_epsilon = any( rhs == ['ε']
-                        for rhss in self.P.values() for rhs in rhss)
-    
-            if appears_in_rhs or has_epsilon:
-                self._add_start_symbol()
+        #0. convertir cada producció de string a LLISTA de símbols
+        #[algoritme i transformació s'han plantejat diferent i cal transformar el format]
+        for lhs in self.grammar:
+            self.grammar[lhs] = [list(rhs) for rhs in self.grammar[lhs]]
 
-            self._remove_epsilon_productions()
-            self._remove_unit_productions()
-            self._remove_long_right_hand_sides()
+        #Aplicar les transformacions necessàries
+        self.eliminar_epsiolon()
+        print("Produccions epsilon eliminades.")
+        print(self.grammar)
+        self.remove_units()
+        print("Produccions epsilon i unitàries eliminades.")
+        print(self.grammar)
+        self.convert_terminals()
+        print("Produccions de terminals convertides.")
+        print(self.grammar)
+        self.break_long_rules()
 
-            if not self.es_cnf():
-                print("La gramàtica no s'ha pogut transformar a CNF.")
+        #convertir format apte per CKY
+        final_grammar={}
+        for lhs, rhss in self.grammar.items():
+            final_grammar[lhs] = [''.join(rhs) for rhs in rhss]
 
-            return self.P
-
-
-
-
-
-
+        return final_grammar

@@ -1,11 +1,34 @@
 import os
-#Get-Content .\fitxers\joc_proves.txt | python lectura.py
+#Get-Content .\fitxers\joc_proves.txt | python D_lectura.py
 from pytokr import pytokr
 import json
 
 
 
 def llegir_dades(nom_fitxer):
+    nom_fitxer += '.txt'
+    directori = os.path.dirname(os.path.abspath(__file__))
+    loc = os.path.join(directori, 'fitxers')
+    fitxer = os.path.join(loc, nom_fitxer)
+
+    gramatica = {}
+
+    with open(fitxer, 'r') as file:
+        for linia in file:
+            linia = linia.strip()  # elimina espais i \n al final
+            if not linia or '->' not in linia:
+                continue
+            esquerra, dreta = linia.split('->')
+            esquerra = esquerra.strip()
+            produccions = dreta.strip().split('|')
+            gramatica[esquerra] = [prod.strip() for prod in produccions]
+
+    return gramatica
+
+
+
+
+def llegir_dades_OLD_VERSION(nom_fitxer):
 
     #accedir fitxer amb la gramàtica    
     nom_fitxer += '.txt'

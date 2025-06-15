@@ -13,7 +13,7 @@ def main():
     print('Introdueix el nom de la gramàtica a provar:')
     print('Opcions:')
     for nom in os.listdir('fitxers'):
-        if nom.endswith('.txt'):
+        if nom.endswith('.txt') and  not nom.startswith('joc_proves'):
             print(f'  {nom[:-4]}')
     nom_fitxer = input('Nom: ')
 
@@ -29,11 +29,14 @@ def main():
     #TRANSDORMACIO OBLIGATORIIIIAAAAA
     #FER SERVIR METODE es_cnf per saber si la gramàtica és CNF
     #Transformar gramàtica a CNF
+    print(gramatica)
     gram= GramTrans_CFGtoCNF(gramatica) #fer millor, però per ara així funciona
     if gram.es_cnf() or prob:
+        print('original:', gramatica)
         print('La gramàtica ja està en CNF.')
     else:
         print('La gramàtica NO està en CNF.')
+        print('gram:ORIGINAL', gramatica)
         gramatica = GramTrans_CFGtoCNF(gramatica).to_cnf()
         print(gramatica)
 

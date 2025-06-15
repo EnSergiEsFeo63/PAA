@@ -52,5 +52,26 @@
     "aa": false,
     "bb": false,
     "aba": false
+  },
+  "gram_CFG": {
+    "abc": true,
+    "b": true,
+    "a": false,
+    "ab": false,
+    "acb": false,
+    "aabc": false,
+    "bc": false
+  },
+  "gram_CFG_2": {
+    "abc": true,
+    "b": true,
+    "abcb": true,
+    "babc": true,
+    "abcabc": true,
+    "a": false,
+    "ab": false,
+    "acb": false,
+    "aabc": false,
+    "bc": false
   }
 }

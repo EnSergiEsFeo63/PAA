@@ -62,4 +62,31 @@ bb F
 aba F
 end
 
+new_gram
+gram_CFG
+abc T
+b T
+a F
+ab F
+acb F
+aabc F
+bc F
+end
+
+new_gram
+gram_CFG_2
+abc T
+b T
+abcb T
+babc T
+abcabc T
+a F
+ab F
+acb F
+aabc F
+bc F
+end
+
+
+
 finalitzar
